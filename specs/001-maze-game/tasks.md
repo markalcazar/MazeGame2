@@ -28,9 +28,9 @@ This is a single-page web application with vanilla JavaScript:
 
 **Purpose**: Project initialization and basic file structure
 
-- [ ] T001 Create directory structure: js/, css/, assets/audio/, assets/sprites/, tests/
-- [ ] T002 [P] Create index.html with canvas element and UI overlay containers
-- [ ] T003 [P] Create css/styles.css for canvas centering and UI styling
+- [X] T001 Create directory structure: js/, css/, assets/audio/, assets/sprites/, tests/
+- [X] T002 [P] Create index.html with canvas element and UI overlay containers
+- [X] T003 [P] Create css/styles.css for canvas centering and UI styling
 - [ ] T004 [P] Initialize package.json and install Jest or Vitest for unit testing
 - [ ] T005 [P] Configure test framework (jest.config.js or vitest.config.js) with coverage thresholds (80% branch coverage)
 - [ ] T006 [P] Create placeholder for assets (document required audio/sprite files in README or quickstart)
