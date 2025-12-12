@@ -10,7 +10,11 @@
       "Bash(node:*)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1:*)",
       "Bash(git rev-parse:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(cat:*)",
+      "Bash(npm why:*)"
     ],
     "deny": [],
     "ask": []
