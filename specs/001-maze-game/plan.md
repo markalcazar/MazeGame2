@@ -13,15 +13,17 @@ A browser-based maze navigation game where a player controls a mouse/rat charact
 
 **Language/Version**: JavaScript ES6+ (targeting modern browsers: Chrome, Firefox, Safari, Edge latest 2 versions)
 **Primary Dependencies**:
-- None (vanilla JavaScript)
+- None for runtime (vanilla JavaScript)
 - HTML5 Canvas API (built-in)
 - Web Audio API (built-in)
+- Jest or Vitest (dev dependency for unit testing)
 
 **Storage**: None (no persistence required - in-memory game state only)
 
 **Testing**:
-- Manual testing for gameplay
-- Unit tests for maze generation, collision detection, and game logic (optional JavaScript test framework like Jest if needed)
+- **REQUIRED**: Unit tests with 80% branch coverage for core logic (Jest or Vitest framework)
+- **REQUIRED**: Manual QA checklist for UI/rendering/audio/gameplay integration
+- Test modules: MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils
 
 **Target Platform**: Modern web browsers (Chrome, Firefox, Safari, Edge - latest 2 versions), Desktop/Laptop with keyboard input
 
@@ -61,13 +63,13 @@ A browser-based maze navigation game where a player controls a mouse/rat charact
 
 ### Principle II: Testing Standards
 
-- ⚠️ **Test Coverage**: Manual testing primary method for browser game. Unit tests for critical logic (maze generation, path finding) recommended but not blocking
-- ⚠️ **Test Types**: Focus on integration testing via gameplay. Unit tests for maze algorithm verification
-- ✅ **Test Quality**: Any automated tests will be deterministic (fixed seeds for maze generation)
-- ⚠️ **Test Naming**: Follow pattern `test_[module]_[scenario]_[outcome]` if automated tests added
+- ✅ **Test Coverage**: 80% branch coverage required for critical modules (MazeGenerator, CollisionDetector, Timer, AnimationManager, Player logic). Manual testing for UI/rendering.
+- ✅ **Test Types**: Unit tests REQUIRED for all core logic modules. Manual integration testing via gameplay for UI/Canvas rendering.
+- ✅ **Test Quality**: All automated tests must be deterministic (fixed seeds for maze generation)
+- ✅ **Test Naming**: Follow pattern `test_[module]_[scenario]_[outcome]` for all test files
 - ✅ **Test Maintenance**: No flaky tests tolerated
 
-**JUSTIFICATION FOR ⚠️**: Browser-based game with heavy UI/canvas rendering makes automated testing expensive. Manual QA with checklist from spec will verify all acceptance criteria. Critical algorithms (maze generation, collision) will have unit tests.
+**TESTING APPROACH**: Unit tests are REQUIRED (not optional) for core game logic to ensure correctness and prevent regressions. Test framework: Jest or similar. Manual QA checklist validates UI/rendering/audio aspects that are expensive to automate.
 
 ### Principle III: User Experience Consistency
 
@@ -91,13 +93,14 @@ A browser-based maze navigation game where a player controls a mouse/rat charact
 
 ### Quality Gates
 
-✅ **All tests pass**: Manual QA checklist + any automated unit tests
+✅ **All tests pass**: REQUIRED unit tests (80% coverage on core logic) + Manual QA checklist
 ✅ **Linting passes**: ESLint with zero errors/warnings
 ✅ **Build succeeds**: No build step required (vanilla JS), file validation only
 ✅ **No performance regression**: Maintain 60 FPS on target browsers
 ✅ **Documentation**: JSDoc for public module APIs
+✅ **Test coverage**: 80% branch coverage on MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils
 
-### Gate Status: **PASSED WITH JUSTIFIED EXCEPTIONS**
+### Gate Status: **PASSED**
 
 ## Project Structure
 
@@ -155,9 +158,10 @@ tests/                   # Optional: Unit tests for core logic
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
+| Complexity | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Limited automated testing | Browser game with Canvas rendering and animations | E2E testing tools (Playwright/Cypress) add significant complexity for marginal value. Manual QA with spec checklist more efficient for this scope. Critical algorithms (maze generation) will have unit tests. |
+| Unit testing with Jest/Vitest | Ensure correctness and prevent regressions in core logic | Pure manual testing would miss edge cases and regressions. Unit tests required for 80% coverage on MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils. |
+| No E2E testing for UI/Canvas | Browser game with Canvas rendering and animations | E2E testing tools (Playwright/Cypress) add significant complexity for UI/rendering tests. Manual QA with spec checklist more efficient for visual/audio validation. |
 | 12 JavaScript modules | Clean separation of concerns per Constitution Principle I | Combining modules (e.g., Player + AnimationManager) creates >50 line functions and violates Single Responsibility. Current split keeps each module focused and testable. |
 
 ## Phase 0: Research & Technical Decisions
