@@ -1,0 +1,32 @@
+// Example test structure for MazeGenerator.js
+// Location: tests/MazeGenerator.test.js
+
+import { generate, validateMaze } from '../js/MazeGenerator.js';
+
+test('generate creates maze with correct dimensions', () => {
+  const maze = generate(15, 15);
+  expect(maze.width).toBe(15);
+  expect(maze.height).toBe(15);
+  expect(maze.grid.length).toBe(15);
+  expect(maze.grid[0].length).toBe(15);
+});
+
+test('generated maze has valid path from start to exit', () => {
+  const maze = generate(15, 15);
+  expect(validateMaze(maze)).toBe(true);
+});
+
+test('start and exit positions are on path cells', () => {
+  const maze = generate(15, 15);
+  expect(maze.grid[maze.start.y][maze.start.x]).toBe(0); // 0 = path
+  expect(maze.grid[maze.exit.y][maze.exit.x]).toBe(0);
+});
+
+test('maze uses correct cell type constants', () => {
+  const maze = generate(10, 10);
+  maze.grid.forEach(row => {
+    row.forEach(cell => {
+      expect([0, 1]).toContain(cell); // Only 0 (path) or 1 (wall)
+    });
+  });
+});

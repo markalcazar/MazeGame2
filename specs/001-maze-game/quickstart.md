@@ -7,14 +7,15 @@
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Project Structure](#project-structure)
-3. [Development Workflow](#development-workflow)
-4. [Asset Requirements](#asset-requirements)
-5. [Testing Procedures](#testing-procedures)
-6. [Performance Profiling](#performance-profiling)
-7. [Browser Compatibility](#browser-compatibility)
-8. [Common Tasks](#common-tasks)
-9. [Troubleshooting](#troubleshooting)
+2. [Jest Setup & TDD Workflow](#jest-setup--tdd-workflow)
+3. [Project Structure](#project-structure)
+4. [Development Workflow](#development-workflow)
+5. [Asset Requirements](#asset-requirements)
+6. [Testing Procedures](#testing-procedures)
+7. [Performance Profiling](#performance-profiling)
+8. [Browser Compatibility](#browser-compatibility)
+9. [Common Tasks](#common-tasks)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -64,6 +65,143 @@ Using VS Code:
 Then navigate to `http://localhost:8000` in your browser.
 
 **Why use a server?** Some browsers restrict local file access for security (CORS policies). A local server avoids these restrictions and provides a more production-like environment.
+
+---
+
+## Jest Setup & TDD Workflow
+
+**This section provides step-by-step instructions for running unit tests and achieving the "green bar" with Jest.**
+
+### Initial Setup
+
+**1. Install Jest**:
+```bash
+npm init -y
+npm install --save-dev jest @types/jest
+```
+
+**2. Configure Jest** - Create `jest.config.js` in project root:
+
+See complete example: [examples/jest.config.js.example](examples/jest.config.js.example)
+
+Key settings:
+- `testEnvironment: 'jsdom'` - Browser-like environment
+- Coverage excludes UI/rendering modules (tested manually)
+- 80% coverage threshold on all metrics
+- No transpilation needed (ES6+ modules)
+
+**3. Update package.json** - Add test scripts:
+
+See complete example: [examples/package.json.example](examples/package.json.example)
+
+Key scripts:
+- `npm test` - Run all tests
+- `npm run test:watch` - Watch mode (great for TDD!)
+- `npm run test:coverage` - Generate coverage report
+- Must use `--experimental-vm-modules` flag for ES6 modules
+
+### TDD Workflow: Red → Green → Refactor
+
+**Example: Testing utils.js (following TDD)**
+
+#### Step 1: 🔴 RED - Write Failing Test
+
+Create `tests/utils.test.js` - See complete example: [examples/utils.test.js.example](examples/utils.test.js.example)
+
+The test file includes:
+- Tests for `randomInt()` - validates range and boundary conditions
+- Tests for `chebyshevDistance()` - validates diagonal, horizontal, and same-position cases
+- Tests for `clamp()` - validates clamping above max, below min, and within range
+- Tests for `shuffle()` - validates array length preservation and element preservation
+
+**Run the tests** - They MUST fail:
+- Command: `npm test utils`
+- Expected: Test suite fails (cannot find module)
+
+✅ **This is GOOD!** You have failing tests. This is the RED phase.
+
+#### Step 2: 🟢 GREEN - Implement to Pass
+
+Create `js/utils.js` - See complete example: [examples/utils.js.example](examples/utils.js.example)
+
+The implementation includes:
+- `randomInt(min, max)` - Generates random integer in range
+- `chebyshevDistance(x1, y1, x2, y2)` - Calculates max of absolute differences
+- `clamp(value, min, max)` - Clamps value between bounds
+- `shuffle(array)` - Fisher-Yates algorithm for shuffling
+- `loadImage(src)` - Promise-based image loader
+
+**Run the tests again**:
+- Command: `npm test utils`
+- Expected: All tests pass (10 tests, green checkmarks)
+
+✅ **GREEN BAR!** All tests passing!
+
+#### Step 3: 🔵 REFACTOR - Improve Code Quality
+
+Now you can refactor with confidence. Tests will catch any regressions.
+
+### Common Jest Commands
+
+- `npm test` - Run all tests
+- `npm run test:watch` - Watch mode (re-runs on file changes) - **GREAT for TDD!**
+- `npm run test:coverage` - Generate coverage report
+- `npm test utils` - Run specific test file
+- `npm test -- -t "randomInt"` - Run specific test by name pattern
+- `npm test -- -u` - Update snapshots (if using snapshot testing)
+- `npm test -- --verbose` - Verbose mode
+- `npm test -- --onlyFailures` - Run only failed tests
+
+### Reading Test Output
+
+**When tests PASS** (🟢 GREEN):
+- Shows "PASS" with green checkmarks (✓) for each test
+- Summary shows test suites passed, total tests passed
+- Time elapsed displayed
+
+**When tests FAIL** (🔴 RED):
+- Shows "FAIL" with red crosses (✕) for failed tests
+- Displays expected vs. received values
+- Shows exact file location and line number of failure
+
+**Coverage Report** (after `npm run test:coverage`):
+- Table shows % Statements, % Branch, % Functions, % Lines
+- Lists uncovered line numbers
+- HTML report generated in `coverage/lcov-report/index.html`
+
+✅ **Goal**: All percentages ≥ 80%
+
+### Jest Troubleshooting
+
+**Problem**: `Cannot use import statement outside a module`
+**Solution**: Ensure `package.json` has `"type": "module"` and use the experimental VM modules flag in test scripts
+
+**Problem**: `ReferenceError: document is not defined`
+**Solution**: Change `testEnvironment` to `'jsdom'` in `jest.config.js`
+
+**Problem**: Tests pass but coverage is below 80%
+**Solution**: Add more test cases to cover edge cases and all code branches
+
+**Problem**: `ELIFECYCLE` error on Windows
+**Solution**: Use `npm test` instead of `npm run test`, or check Node.js version (need v14+)
+
+### Tips for Getting to 80% Coverage
+
+1. **Check uncovered lines**: Run `npm run test:coverage` and look at the table
+2. **Open HTML report**: Coverage creates `coverage/lcov-report/index.html` - open in browser to see exactly which lines aren't covered
+3. **Add edge case tests**: Test boundary conditions, null/undefined, empty arrays, etc.
+4. **Test error paths**: Make sure to test `catch` blocks and error handling
+5. **Use `describe.each` for parameterized tests**: Test multiple inputs efficiently
+
+### Jest Best Practices
+
+- **Run `npm run test:watch`** during development for instant feedback
+- **Commit after each GREEN phase** (all tests passing)
+- **Write tests FIRST** (RED), then minimal code to pass (GREEN), then refactor (REFACTOR)
+- **Use `describe` blocks** to group related tests
+- **Use meaningful test names** that describe the expected behavior
+- **Test one thing per test** - if a test has multiple assertions testing different behaviors, split it
+- **Mock external dependencies** (APIs, file system) to keep tests fast and deterministic
 
 ---
 
@@ -136,33 +274,15 @@ C:\Projects\MazeGame2\
 
 **Recommended ESLint Configuration:**
 
-Create `.eslintrc.json` in project root:
-```json
-{
-  "env": {
-    "browser": true,
-    "es6": true
-  },
-  "extends": "eslint:recommended",
-  "parserOptions": {
-    "ecmaVersion": 2018,
-    "sourceType": "module"
-  },
-  "rules": {
-    "indent": ["error", 2],
-    "linebreak-style": ["error", "unix"],
-    "quotes": ["error", "single"],
-    "semi": ["error", "always"],
-    "no-unused-vars": ["warn"],
-    "no-console": ["off"]
-  }
-}
-```
+See complete example: [examples/.eslintrc.json.example](examples/.eslintrc.json.example)
 
-**Run linting:**
-```bash
-npx eslint js/**/*.js
-```
+Create `.eslintrc.json` in project root with ESLint rules for:
+- Browser environment with ES6
+- 2-space indentation
+- Single quotes, semicolons required
+- Console allowed for debugging
+
+**Run linting:** `npx eslint js/**/*.js`
 
 ### 2. Development Cycle
 
@@ -181,21 +301,13 @@ Each module should:
 - Be testable independently
 
 **Example module structure:**
-```javascript
-// MazeGenerator.js
 
-/**
- * Generates a random maze using Recursive Backtracker algorithm
- * @param {number} width - Maze width in grid cells
- * @param {number} height - Maze height in grid cells
- * @returns {Maze} Generated maze object
- */
-function generate(width, height) {
-  // Implementation
-}
+See complete example: [examples/MazeGenerator.js.example](examples/MazeGenerator.js.example)
 
-export { generate };
-```
+Each module should:
+- Use JSDoc comments for function documentation
+- Export single responsibility functions
+- Follow consistent naming conventions
 
 ---
 
@@ -334,34 +446,19 @@ Use this checklist before considering a feature complete:
 
 If using Jest or similar test framework:
 
-**Install Jest:**
-```bash
-npm install --save-dev jest
-```
+**Install Jest:** `npm install --save-dev jest`
 
 **Example test structure:**
-```javascript
-// tests/MazeGenerator.test.js
-import { generate, validateMaze } from '../js/MazeGenerator.js';
 
-test('generate creates maze with correct dimensions', () => {
-  const maze = generate(15, 15);
-  expect(maze.width).toBe(15);
-  expect(maze.height).toBe(15);
-  expect(maze.grid.length).toBe(15);
-  expect(maze.grid[0].length).toBe(15);
-});
+See complete example: [examples/MazeGenerator.test.js.example](examples/MazeGenerator.test.js.example)
 
-test('generated maze has valid path from start to exit', () => {
-  const maze = generate(15, 15);
-  expect(validateMaze(maze)).toBe(true);
-});
-```
+Tests should verify:
+- Maze dimensions match input parameters
+- Valid path exists from start to exit
+- Start and exit positions are on path cells
+- Grid uses correct cell type constants
 
-**Run tests:**
-```bash
-npx jest
-```
+**Run tests:** `npx jest`
 
 **Note:** Automated testing is optional per constitution check (manual QA primary method for browser games).
 

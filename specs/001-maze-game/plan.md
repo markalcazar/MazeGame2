@@ -114,7 +114,15 @@ specs/001-maze-game/
 ├── quickstart.md        # Phase 1: How to run and develop
 ├── contracts/           # Phase 1: Module interfaces (JSDoc definitions)
 │   └── module-contracts.md
-└── tasks.md             # Phase 2: Implementation task list (NOT YET CREATED)
+├── examples/            # Code examples (referenced by quickstart.md)
+│   ├── .eslintrc.json.example
+│   ├── jest.config.js.example
+│   ├── MazeGenerator.js.example
+│   ├── MazeGenerator.test.js.example
+│   ├── package.json.example
+│   ├── utils.js.example
+│   └── utils.test.js.example
+└── tasks.md             # Phase 2: Implementation task list
 ```
 
 ### Source Code (repository root)

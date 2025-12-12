@@ -1,0 +1,23 @@
+// Example Jest configuration for Maze Game
+// Location: jest.config.js (project root)
+
+export default {
+  testEnvironment: 'jsdom',  // Browser-like environment for DOM testing
+  collectCoverageFrom: [
+    'js/**/*.js',
+    '!js/main.js',           // Exclude main entry point
+    '!js/MazeRenderer.js',   // Exclude Canvas rendering (manual QA)
+    '!js/InputHandler.js',   // Exclude DOM event handlers (manual QA)
+    '!js/UIManager.js',      // Exclude UI manipulation (manual QA)
+    '!js/AudioManager.js'    // Exclude Web Audio API (manual QA)
+  ],
+  coverageThresholds: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+  transform: {}  // No transpilation needed for ES6+ modules
+};
