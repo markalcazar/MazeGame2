@@ -23,10 +23,85 @@
 
 ### Prerequisites
 
+**Required:**
+- **Node.js 18+** or **Node.js 20+** (for running tests) - [Download](https://nodejs.org/)
+- **npm 9+** (comes with Node.js)
 - Modern web browser (Chrome 90+, Firefox 88+, Safari 14+, or Edge 90+)
 - Text editor or IDE (VS Code, Sublime Text, WebStorm, etc.)
-- Basic HTTP server for local development (optional but recommended)
+
+**Optional:**
+- Git (for cloning the repository)
+- Basic HTTP server for local development (recommended for testing)
 - Chrome DevTools or equivalent for debugging and profiling
+
+### Quick Setup (Automated)
+
+**For new developers - use the automated setup script:**
+
+```bash
+# Clone the repository (or download and extract ZIP)
+git clone <repository-url>
+cd MazeGame2
+
+# Run the automated setup script
+node setup.js
+```
+
+**What the setup script does:**
+1. ✅ Verifies Node.js 18+ is installed
+2. ✅ Verifies npm is available
+3. ✅ Validates package.json configuration
+4. ✅ Installs all dependencies (Jest, @types/jest, jest-environment-jsdom)
+5. ✅ Validates correct package versions
+6. ✅ Verifies Jest is working correctly
+7. ✅ Displays available npm commands
+
+**Expected output:**
+```
+✓ Node.js 20.x.x is compatible
+✓ npm is available
+✓ package.json exists and is valid
+✓ Dependencies installed successfully
+✓ jest@29.7.0 installed
+✓ @types/jest@29.5.14 installed
+✓ jest-environment-jsdom@29.7.0 installed
+✓ Jest is working correctly
+
+✅ Setup completed successfully!
+```
+
+### Manual Setup (Alternative)
+
+If you prefer manual setup or the automated script fails:
+
+**1. Verify Node.js and npm:**
+```bash
+node --version   # Should show v18.x.x or v20.x.x
+npm --version    # Should show 9.x.x or higher
+```
+
+**2. Install dependencies:**
+```bash
+npm install
+```
+
+**3. Verify installation:**
+```bash
+npm test   # Should show "No tests found" (expected at this stage)
+```
+
+**4. Verify all packages are installed:**
+```bash
+npm list jest @types/jest jest-environment-jsdom
+```
+
+Expected output:
+```
+maze-game@1.0.0
+├── @types/jest@29.5.14
+├── jest-environment-jsdom@29.7.0
+└── jest@29.7.0
+```
 
 ### Running the Game Locally
 
