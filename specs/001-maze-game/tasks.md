@@ -37,21 +37,345 @@ This is a single-page web application with vanilla JavaScript:
 
 ---
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Jest Setup & TDD Workflow Guide
+
+**This section provides step-by-step instructions for running tests and achieving the "green bar" with Jest.**
+
+### Initial Setup (After T004-T005)
+
+1. **Install Jest** (T004):
+```bash
+npm init -y
+npm install --save-dev jest @types/jest
+```
+
+2. **Configure Jest** (T005) - Create `jest.config.js`:
+```javascript
+export default {
+  testEnvironment: 'jsdom',  // Browser-like environment for DOM testing
+  collectCoverageFrom: [
+    'js/**/*.js',
+    '!js/main.js',           // Exclude main entry point
+    '!js/MazeRenderer.js',   // Exclude Canvas rendering (manual QA)
+    '!js/InputHandler.js',   // Exclude DOM event handlers (manual QA)
+    '!js/UIManager.js',      // Exclude UI manipulation (manual QA)
+    '!js/AudioManager.js'    // Exclude Web Audio API (manual QA)
+  ],
+  coverageThresholds: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+  transform: {}  // No transpilation needed for ES6+ modules
+};
+```
+
+3. **Update package.json** - Add test scripts:
+```json
+{
+  "name": "maze-game",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:single": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0"
+  }
+}
+```
+
+### TDD Workflow: Red → Green → Refactor
+
+**Example: Testing utils.js (T008-T009)**
+
+#### Step 1: 🔴 RED - Write Failing Test (T008)
+
+Create `tests/utils.test.js`:
+```javascript
+import { randomInt, chebyshevDistance, clamp, shuffle } from '../js/utils.js';
+
+describe('utils module', () => {
+  describe('randomInt', () => {
+    test('returns integer within range [min, max]', () => {
+      for (let i = 0; i < 100; i++) {
+        const result = randomInt(1, 10);
+        expect(result).toBeGreaterThanOrEqual(1);
+        expect(result).toBeLessThanOrEqual(10);
+        expect(Number.isInteger(result)).toBe(true);
+      }
+    });
+
+    test('returns min when min === max', () => {
+      expect(randomInt(5, 5)).toBe(5);
+    });
+  });
+
+  describe('chebyshevDistance', () => {
+    test('calculates correct distance for diagonal movement', () => {
+      expect(chebyshevDistance(0, 0, 3, 4)).toBe(4);
+    });
+
+    test('calculates correct distance for horizontal movement', () => {
+      expect(chebyshevDistance(0, 0, 5, 0)).toBe(5);
+    });
+
+    test('returns 0 for same position', () => {
+      expect(chebyshevDistance(2, 3, 2, 3)).toBe(0);
+    });
+  });
+
+  describe('clamp', () => {
+    test('clamps value above max to max', () => {
+      expect(clamp(15, 0, 10)).toBe(10);
+    });
+
+    test('clamps value below min to min', () => {
+      expect(clamp(-5, 0, 10)).toBe(0);
+    });
+
+    test('returns value when within range', () => {
+      expect(clamp(5, 0, 10)).toBe(5);
+    });
+  });
+
+  describe('shuffle', () => {
+    test('returns array with same length', () => {
+      const arr = [1, 2, 3, 4, 5];
+      const shuffled = shuffle([...arr]);
+      expect(shuffled.length).toBe(arr.length);
+    });
+
+    test('contains all original elements', () => {
+      const arr = [1, 2, 3, 4, 5];
+      const shuffled = shuffle([...arr]);
+      expect(shuffled.sort()).toEqual(arr.sort());
+    });
+  });
+});
+```
+
+**Run the tests** - They MUST fail:
+```bash
+npm test utils
+```
+
+**Expected output** (🔴 RED):
+```
+FAIL  tests/utils.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../js/utils.js' from 'tests/utils.test.js'
+```
+
+✅ **This is GOOD!** You have failing tests. This is the RED phase.
+
+#### Step 2: 🟢 GREEN - Implement to Pass (T009)
+
+Create `js/utils.js`:
+```javascript
+/**
+ * Generates random integer in range [min, max]
+ */
+export function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Calculates Chebyshev distance (max of absolute differences)
+ */
+export function chebyshevDistance(x1, y1, x2, y2) {
+  const dx = Math.abs(x1 - x2);
+  const dy = Math.abs(y1 - y2);
+  return Math.max(dx, dy);
+}
+
+/**
+ * Clamps value between min and max
+ */
+export function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Shuffles array in place using Fisher-Yates algorithm
+ */
+export function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/**
+ * Loads an image and returns a promise
+ */
+export async function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+```
+
+**Run the tests again**:
+```bash
+npm test utils
+```
+
+**Expected output** (🟢 GREEN):
+```
+PASS  tests/utils.test.js
+  utils module
+    randomInt
+      ✓ returns integer within range [min, max] (2 ms)
+      ✓ returns min when min === max
+    chebyshevDistance
+      ✓ calculates correct distance for diagonal movement
+      ✓ calculates correct distance for horizontal movement
+      ✓ returns 0 for same position
+    clamp
+      ✓ clamps value above max to max
+      ✓ clamps value below min to min
+      ✓ returns value when within range
+    shuffle
+      ✓ returns array with same length
+      ✓ contains all original elements
+
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+```
+
+✅ **GREEN BAR!** All tests passing!
+
+#### Step 3: 🔵 REFACTOR - Improve Code Quality
+
+Now you can refactor with confidence. Tests will catch any regressions.
+
+### Common Jest Commands
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run specific test file
+npm test utils
+
+# Run specific test by name pattern
+npm test -- -t "randomInt"
+
+# Update snapshots (if using snapshot testing)
+npm test -- -u
+
+# Run tests in verbose mode
+npm test -- --verbose
+
+# Run only failed tests
+npm test -- --onlyFailures
+```
+
+### Reading Test Output
+
+**When tests PASS** (🟢 GREEN):
+```
+PASS  tests/utils.test.js
+  ✓ test name (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+Snapshots:   0 total
+Time:        1.234 s
+```
+
+**When tests FAIL** (🔴 RED):
+```
+FAIL  tests/utils.test.js
+  ✕ clamps value above max to max (5 ms)
+
+  ● utils module › clamp › clamps value above max to max
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 10
+    Received: 15
+
+      42 |   test('clamps value above max to max', () => {
+      43 |     expect(clamp(15, 0, 10)).toBe(10);
+         |                              ^
+      44 |   });
+
+    at Object.<anonymous> (tests/utils.test.js:43:30)
+```
+
+**Coverage Report** (after `npm run test:coverage`):
+```
+----------|---------|----------|---------|---------|-------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------|---------|----------|---------|---------|-------------------
+All files |   85.71 |    83.33 |      80 |   85.71 |
+ utils.js |   85.71 |    83.33 |      80 |   85.71 | 18-20
+----------|---------|----------|---------|---------|-------------------
+```
+
+✅ **Goal**: All percentages ≥ 80%
+
+### Troubleshooting
+
+**Problem**: `Cannot use import statement outside a module`
+**Solution**: Ensure `package.json` has `"type": "module"` and use the experimental VM modules flag in test scripts
+
+**Problem**: `ReferenceError: document is not defined`
+**Solution**: Change `testEnvironment` to `'jsdom'` in `jest.config.js`
+
+**Problem**: Tests pass but coverage is below 80%
+**Solution**: Add more test cases to cover edge cases and all code branches
+
+**Problem**: `ELIFECYCLE` error on Windows
+**Solution**: Use `npm test` instead of `npm run test`, or check Node.js version (need v14+)
+
+### Tips for Getting to 80% Coverage
+
+1. **Check uncovered lines**: Run `npm run test:coverage` and look at the table
+2. **Open HTML report**: Coverage creates `coverage/lcov-report/index.html` - open in browser to see exactly which lines aren't covered
+3. **Add edge case tests**: Test boundary conditions, null/undefined, empty arrays, etc.
+4. **Test error paths**: Make sure to test `catch` blocks and error handling
+5. **Use `describe.each` for parameterized tests**: Test multiple inputs efficiently
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites) - TDD Approach
 
 **Purpose**: Core utilities and configuration that ALL user stories depend on
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 [P] Create js/config.js with DIFFICULTY_CONFIG, GAME_CONFIG, CELL_TYPES, ANIMATION_STATES constants
-- [ ] T008 [P] Implement js/utils.js with randomInt(), chebyshevDistance(), clamp(), loadImage(), shuffle() functions
-- [ ] T009 [P] Create js/Timer.js module with createTimer(), start(), stop(), reset(), getElapsedSeconds(), formatTime() functions
-- [ ] T010 [P] Create js/CollisionDetector.js module with canMove(), getTargetPosition(), isInBounds() functions
-- [ ] T011 [P] Write unit tests for js/utils.js in tests/utils.test.js (80% coverage): test randomInt, chebyshevDistance, clamp, shuffle
-- [ ] T012 [P] Write unit tests for js/Timer.js in tests/Timer.test.js (80% coverage): test start, stop, reset, elapsed time calculation
-- [ ] T013 [P] Write unit tests for js/CollisionDetector.js in tests/CollisionDetector.test.js (80% coverage): test wall collision, boundaries, all directions
+**🔴 RED → 🟢 GREEN → 🔵 REFACTOR**: Following Test-Driven Development - write failing tests FIRST, then implement to make them pass
 
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T007 [P] Create js/config.js with DIFFICULTY_CONFIG, GAME_CONFIG, CELL_TYPES, ANIMATION_STATES constants (no tests needed - pure data)
+- [ ] T008 [P] 🔴 RED: Write unit tests for js/utils.js in tests/utils.test.js (80% coverage): test randomInt, chebyshevDistance, clamp, shuffle - **tests MUST fail initially**
+- [ ] T009 🟢 GREEN: Implement js/utils.js with randomInt(), chebyshevDistance(), clamp(), loadImage(), shuffle() functions to make T008 tests pass
+- [ ] T010 [P] 🔴 RED: Write unit tests for js/Timer.js in tests/Timer.test.js (80% coverage): test createTimer, start, stop, reset, elapsed time calculation - **tests MUST fail initially**
+- [ ] T011 🟢 GREEN: Create js/Timer.js module with createTimer(), start(), stop(), reset(), getElapsedSeconds(), formatTime() functions to make T010 tests pass
+- [ ] T012 [P] 🔴 RED: Write unit tests for js/CollisionDetector.js in tests/CollisionDetector.test.js (80% coverage): test wall collision, boundaries, all directions - **tests MUST fail initially**
+- [ ] T013 🟢 GREEN: Create js/CollisionDetector.js module with canMove(), getTargetPosition(), isInBounds() functions to make T012 tests pass
+
+**Checkpoint**: Foundation ready - run `npm test -- --coverage` to verify 80% coverage achieved - user story implementation can now begin in parallel
 
 ---
 
@@ -101,13 +425,22 @@ This is a single-page web application with vanilla JavaScript:
 - [ ] T032 [US1] Manual QA: Verify timer displays and counts up during gameplay
 - [ ] T033 [US1] Manual QA: Verify final time shown on victory screen
 
-**Required Unit Tests (80% Coverage)**
+**Required Unit Tests (80% Coverage) - TDD Approach**
 
-- [ ] T034 [P] [US1] Write unit tests for js/MazeGenerator.js in tests/MazeGenerator.test.js (80% coverage): test generate() dimensions, start/exit positions, grid structure, validateMaze() solvability
-- [ ] T035 [P] [US1] Write unit tests for js/Player.js in tests/Player.test.js (80% coverage): test createPlayer(), movePlayer() with various maze configurations, animation state transitions
-- [ ] T036 [P] [US1] Write unit tests for js/GameState.js in tests/GameState.test.js (80% coverage): test initGame(), checkVictory(), setDifficulty(), observer pattern
+**Note**: These tests should have been written BEFORE implementation, but since T014-T018 are core modules, you can apply TDD retroactively by:
+1. Writing tests for remaining functionality
+2. Running tests to see what fails
+3. Implementing missing features to make tests pass
 
-**Checkpoint**: At this point, User Story 1 should be fully functional - player can navigate maze and win
+- [ ] T034 🔴 RED: Write unit tests for js/MazeGenerator.js in tests/MazeGenerator.test.js (80% coverage): test generate() dimensions, start/exit positions, grid structure, validateMaze() solvability - run tests, verify failures
+- [ ] T035 🟢 GREEN: Fix any MazeGenerator.js implementation gaps to make T034 tests pass - run `npm test MazeGenerator` until all green
+- [ ] T036 🔴 RED: Write unit tests for js/Player.js in tests/Player.test.js (80% coverage): test createPlayer(), movePlayer() with various maze configurations, animation state transitions - run tests, verify failures
+- [ ] T037 🟢 GREEN: Fix any Player.js implementation gaps to make T036 tests pass - run `npm test Player` until all green
+- [ ] T038 🔴 RED: Write unit tests for js/GameState.js in tests/GameState.test.js (80% coverage): test initGame(), checkVictory(), setDifficulty(), observer pattern - run tests, verify failures
+- [ ] T039 🟢 GREEN: Fix any GameState.js implementation gaps to make T038 tests pass - run `npm test GameState` until all green
+- [ ] T040 🔵 REFACTOR: Run full test suite `npm test` - all tests should pass with 80%+ coverage - refactor any code smells while keeping tests green
+
+**Checkpoint**: At this point, User Story 1 should be fully functional - player can navigate maze and win - ALL TESTS PASSING ✅
 
 ---
 
@@ -248,11 +581,12 @@ This is a single-page web application with vanilla JavaScript:
 - [ ] T104 [US5] Manual QA: Verify animations maintain smooth frame transitions
 - [ ] T105 [US5] Manual QA: Verify game falls back to static sprite if animation frames fail to load
 
-**Required Unit Tests (80% Coverage)**
+**Required Unit Tests (80% Coverage) - TDD Approach**
 
-- [ ] T106 [P] [US5] Write unit tests for js/AnimationManager.js in tests/AnimationManager.test.js (80% coverage): test update() frame cycling with deltaTime, getCurrentFrame() coordinates, setAnimation() state changes
+- [ ] T106 🔴 RED: Write unit tests for js/AnimationManager.js in tests/AnimationManager.test.js (80% coverage): test update() frame cycling with deltaTime, getCurrentFrame() coordinates, setAnimation() state changes - run tests, verify failures
+- [ ] T107 🟢 GREEN: Fix any AnimationManager.js implementation gaps to make T106 tests pass - run `npm test AnimationManager` until all green
 
-**Checkpoint**: All animations are smooth and performant at 60 FPS
+**Checkpoint**: All animations are smooth and performant at 60 FPS - ALL TESTS PASSING ✅
 
 ---
 
@@ -260,25 +594,25 @@ This is a single-page web application with vanilla JavaScript:
 
 **Purpose**: Final quality improvements, performance validation, cross-browser testing, documentation
 
-- [ ] T107 [P] Run test coverage report: verify 80% branch coverage on MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils, GameState
-- [ ] T108 [P] Add ESLint configuration (.eslintrc.json) per quickstart.md recommendations
-- [ ] T109 [P] Run ESLint on all js/ files, fix any errors/warnings for code quality compliance
-- [ ] T110 [P] Add JSDoc comments to all public module APIs for documentation
-- [ ] T111 Performance profiling with Chrome DevTools: verify 60 FPS sustained, <1s maze generation, <100ms input response
-- [ ] T112 Performance profiling: verify no memory leaks on difficulty changes (take heap snapshots)
-- [ ] T113 Browser compatibility testing: Chrome (verify all features work at 60 FPS)
-- [ ] T114 Browser compatibility testing: Firefox (verify all features work at 60 FPS)
-- [ ] T115 Browser compatibility testing: Safari (verify audio plays, handle autoplay restrictions)
-- [ ] T116 Browser compatibility testing: Edge (verify all features work at 60 FPS)
-- [ ] T117 [P] Create README.md at repository root with game description, how to run, asset attribution
-- [ ] T118 [P] Update quickstart.md if any development workflow changes were discovered during implementation
-- [ ] T119 Edge case testing: Rapid arrow key presses (verify movement smoothness and collision accuracy)
-- [ ] T120 Edge case testing: Browser window resize (verify canvas stays centered and fixed size)
-- [ ] T121 Edge case testing: Missing audio files (verify graceful degradation with warning)
-- [ ] T122 Edge case testing: Missing sprite files (verify error handling or fallback graphics)
-- [ ] T123 Final manual QA pass: Run complete checklist from quickstart.md (50+ items covering all user stories)
-- [ ] T124 Accessibility review: Verify keyboard navigation works (arrow keys), document visual-only limitation
-- [ ] T125 Create demo video or screenshots for project showcase (optional)
+- [ ] T108 [P] Run test coverage report: `npm test -- --coverage` - verify 80% branch coverage on MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils, GameState
+- [ ] T109 [P] Add ESLint configuration (.eslintrc.json) per quickstart.md recommendations
+- [ ] T110 [P] Run ESLint on all js/ files, fix any errors/warnings for code quality compliance
+- [ ] T111 [P] Add JSDoc comments to all public module APIs for documentation
+- [ ] T112 Performance profiling with Chrome DevTools: verify 60 FPS sustained, <1s maze generation, <100ms input response
+- [ ] T113 Performance profiling: verify no memory leaks on difficulty changes (take heap snapshots)
+- [ ] T114 Browser compatibility testing: Chrome (verify all features work at 60 FPS)
+- [ ] T115 Browser compatibility testing: Firefox (verify all features work at 60 FPS)
+- [ ] T116 Browser compatibility testing: Safari (verify audio plays, handle autoplay restrictions)
+- [ ] T117 Browser compatibility testing: Edge (verify all features work at 60 FPS)
+- [ ] T118 [P] Create README.md at repository root with game description, how to run, asset attribution
+- [ ] T119 [P] Update quickstart.md if any development workflow changes were discovered during implementation
+- [ ] T120 Edge case testing: Rapid arrow key presses (verify movement smoothness and collision accuracy)
+- [ ] T121 Edge case testing: Browser window resize (verify canvas stays centered and fixed size)
+- [ ] T122 Edge case testing: Missing audio files (verify graceful degradation with warning)
+- [ ] T123 Edge case testing: Missing sprite files (verify error handling or fallback graphics)
+- [ ] T124 Final manual QA pass: Run complete checklist from quickstart.md (50+ items covering all user stories)
+- [ ] T125 Accessibility review: Verify keyboard navigation works (arrow keys), document visual-only limitation
+- [ ] T126 Create demo video or screenshots for project showcase (optional)
 
 ---
 
@@ -410,25 +744,25 @@ With multiple developers:
 
 ## Task Summary
 
-**Total Tasks**: 123 tasks
+**Total Tasks**: 126 tasks (TDD-ordered)
 
 **Task Count by User Story**:
 - Phase 1 (Setup): 6 tasks (including test framework setup)
-- Phase 2 (Foundational): 7 tasks (4 modules + 3 REQUIRED unit test files) - BLOCKS all stories
-- Phase 3 (US1 - Navigate Maze): 23 tasks (including 8 QA + 3 REQUIRED unit test files) 🎯 MVP
+- Phase 2 (Foundational - TDD): 7 tasks (1 config + 3 RED tests + 3 GREEN implementations) - BLOCKS all stories
+- Phase 3 (US1 - Navigate Maze - TDD): 27 tasks (implementation + 8 QA + 7 RED/GREEN test cycles + 1 REFACTOR) 🎯 MVP
 - Phase 4 (US2 - Timer Display): 10 tasks (including 5 QA)
 - Phase 5 (US3 - Difficulty Levels): 15 tasks (including 9 QA)
 - Phase 6 (US4 - Audio): 23 tasks (including 4 assets + 10 QA)
-- Phase 7 (US5 - Animations): 20 tasks (including 3 assets + 10 QA + 1 REQUIRED unit test file)
+- Phase 7 (US5 - Animations - TDD): 21 tasks (including 3 assets + 10 QA + 2 RED/GREEN test cycles)
 - Phase 8 (Polish): 19 tasks (including coverage verification)
 
 **Parallel Opportunities Identified**:
 - Setup phase: 5 tasks can run in parallel (T002, T003, T004, T005, T006)
-- Foundational phase: 7 tasks can run in parallel (T007, T008, T009, T010, T011, T012, T013)
-- User Story 1: 4 core modules can be built in parallel (T014, T015, T016, T017), then 3 unit tests in parallel (T034, T035, T036)
+- Foundational phase (TDD): T007 + (T008, T010, T012) RED tests can run in parallel - but each GREEN implementation (T009, T011, T013) must follow its RED test sequentially
+- User Story 1: Core modules (T014, T015, T016, T017) can be built in parallel, then RED tests (T034, T036, T038) in parallel, followed by GREEN fixes sequentially
 - User Story 4: 3 asset acquisitions in parallel (T062, T063, T064)
 - User Story 5: 3 asset acquisitions in parallel (T085, T086, T087)
-- Polish phase: 4 tasks can run in parallel (T107, T108, T109, T110, T117, T118)
+- Polish phase: 4 tasks can run in parallel (T108, T109, T110, T111, T118, T119)
 
 **Independent Test Criteria**:
 - ✅ US1: Launch game, navigate maze with arrow keys, reach exit, see victory screen
@@ -437,9 +771,11 @@ With multiple developers:
 - ✅ US4: Hear music/SFX, adjust volume, toggle mute
 - ✅ US5: Observe animated legs/tail/eyes during movement, collision recoil on wall hit
 
-**Suggested MVP Scope**: Phase 1 + Phase 2 + Phase 3 (User Story 1 only) = Tasks T001-T036
+**Suggested MVP Scope**: Phase 1 + Phase 2 + Phase 3 (User Story 1 only) = Tasks T001-T040
 
-**Estimated Codebase Size**: ~2000-3000 lines of JavaScript across 12 modules (per plan.md)
+**Estimated Codebase Size**: ~2000-3000 lines of JavaScript across 12 modules + ~800-1200 lines of test code (per plan.md)
+
+**TDD Discipline**: Tests written FIRST (RED), then implementation (GREEN), then refactor (REFACTOR)
 
 ---
 
@@ -450,9 +786,11 @@ With multiple developers:
 - Each user story should be independently completable and testable
 - **REQUIRED**: Unit tests with 80% branch coverage for core logic modules (MazeGenerator, CollisionDetector, Timer, AnimationManager, Player, utils, GameState)
 - **REQUIRED**: Manual QA checklist for UI/rendering/audio integration validation
-- Test framework: Jest or Vitest (configured in Phase 1)
-- All unit tests must pass before deployment or moving to next phase
-- Commit after each task or logical group
+- **TDD Workflow**: 🔴 RED (write failing test) → 🟢 GREEN (make it pass) → 🔵 REFACTOR (improve code)
+- Test framework: Jest (configured in Phase 1) - see "Jest Setup & TDD Workflow Guide" section above
+- **Key Commands**: `npm test` (run all), `npm run test:watch` (watch mode), `npm run test:coverage` (coverage report)
+- All unit tests must pass with ≥80% coverage before deployment or moving to next phase
+- Commit after each GREEN phase (tests passing) before moving to next RED phase
 - Stop at any checkpoint to validate story independently
 - Asset files (audio, sprites) must be acquired externally - see quickstart.md for recommended sources
 - Performance targets: 60 FPS, <1s maze generation, <100ms input response, <50ms audio latency
